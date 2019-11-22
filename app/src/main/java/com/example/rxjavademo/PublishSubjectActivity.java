@@ -13,7 +13,7 @@ import android.os.Bundle;
 import java.util.Observable;
 import java.util.concurrent.Callable;
 
-public class Main2Activity extends AppCompatActivity
+public class PublishSubjectActivity extends AppCompatActivity
 {
     private PublishSubject publishSubject;
 
