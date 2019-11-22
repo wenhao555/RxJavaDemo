@@ -6,9 +6,12 @@ import rx.Observer;
 import rx.Subscriber;
 import rx.functions.Action0;
 import rx.functions.Action1;
+import rx.subjects.PublishSubject;
 
 import android.os.Bundle;
 import android.util.Log;
+
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity
 {
@@ -19,12 +22,15 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Observable observable = Observable.just("is Next One", "is Next Two");
-        Observable observable1 = Observable.from(strings);
+        Observable<String> observable1 = Observable.from(strings);
         observable.subscribe(subscriber);
         observable.subscribe(onNextAction);
         observable.subscribe(onNextAction, onErrorAction);
         observable.subscribe(onNextAction, onErrorAction, onCompletedAction);
+        Observable.interval(2, TimeUnit.SECONDS)
+                .subscribe(subscriber);
     }//----------------------------------被观察者-----------------------------//
+
     Action1<String> onNextAction = new Action1<String>()
     {
         @Override
@@ -53,12 +59,11 @@ public class MainActivity extends AppCompatActivity
     };
 
 
-
     private String[] strings = {"is Next One", "is Next Two"};
     /**
      * 被观察者
      */
-    Observable observable = Observable.create(new Observable.OnSubscribe<String>()
+    Observable<String> observable = Observable.create(new Observable.OnSubscribe<String>()
     {
         @Override
         public void call(Subscriber<? super String> subscriber)
