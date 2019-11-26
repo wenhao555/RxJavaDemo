@@ -4,10 +4,12 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import rx.Observable;
 import rx.Observer;
+import rx.Subscriber;
 import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.observables.GroupedObservable;
 
+import android.nfc.Tag;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -30,7 +32,7 @@ public class Main3Activity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main3);
         Log.e(TAG, "start:");
-        grouupBy();
+        throttleWithTimeOut();
     }
 
     private void intervalOb()
@@ -245,4 +247,163 @@ public class Main3Activity extends AppCompatActivity
                     }
                 });
     }
+
+    //------------------------------------过滤操作符-------------------------------------//
+    private void filterOb()
+    {
+        Observable.just(1, 2, 3, 4).filter(new Func1<Integer, Boolean>()
+        {
+            @Override
+            public Boolean call(Integer integer)
+            {
+                return integer > 2;//将大于二的数值提交给订阅者
+            }
+        }).subscribe(new Action1<Integer>()
+        {
+            @Override
+            public void call(Integer integer)
+            {
+                Log.e(TAG, "filter:" + integer);//输出拼接结果
+            }
+        });
+    }
+
+    private void elementAtOb()
+    {
+        Observable.just(1, 2, 2, 4)
+//                .elementAt(2)//下标从0开始
+                .elementAtOrDefault(0, 3)//返回指定位置的值，如果超出下标则返回默认值不抛出异常
+                .subscribe(new Action1<Integer>()
+                {
+                    @Override
+                    public void call(Integer integer)
+                    {
+                        Log.e(TAG, "elementAt:" + integer);//输出拼接结果
+                    }
+                });
+    }
+
+    private void distinctOb()
+    {
+        Observable.just(3, 3, 3)
+                .distinctUntilChanged()
+                .subscribe(new Action1<Integer>()
+                {
+                    @Override
+                    public void call(Integer integer)
+                    {
+                        Log.e(TAG, "distinct:" + integer);//输出拼接结果
+                    }
+                });
+    }
+
+    private void skitOb()
+    {
+        Observable.just(1, 2, 3, 4, 5, 6)
+//                .skip(2)//从第3位去
+//                .take(2)//取前两位
+//                .skipLast(2)//取倒数第二位前的数据
+                .takeLast(2)//取后两位
+                .subscribe(new Action1<Integer>()
+                {
+                    @Override
+                    public void call(Integer integer)
+                    {
+                        Log.e(TAG, "skit:" + integer);//输出拼接结果
+                    }
+                });
+    }
+
+    private void ignoreElements()
+    {
+        Observable.just(1, 2, 3, 4, 5)
+                .ignoreElements()//忽略所有的操作结果只要C和ONe
+                .subscribe(new Observer<Integer>()
+                {
+                    @Override
+                    public void onCompleted()
+                    {
+                        Log.e(TAG, "onCompleted");
+                    }
+
+                    @Override
+                    public void onError(Throwable e)
+                    {
+                        Log.e(TAG, "onError");
+                    }
+
+                    @Override
+                    public void onNext(Integer integer)
+                    {
+                        Log.e(TAG, "onNext" + integer);
+                    }
+                });
+    }
+
+    private void throttleFirst()
+    {
+        Observable.create(new Observable.OnSubscribe<Integer>()
+        {//创建一个被观察者
+            @Override
+            public void call(Subscriber<? super Integer> subscriber)
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    subscriber.onNext(i);//继续发送下一个
+                    try
+                    {
+                        Thread.sleep(100);//睡100ms，如果补睡眠则只有第一个数据会被发射
+                    } catch (InterruptedException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+                subscriber.onCompleted();//完成
+            }
+        }).throttleFirst(200, TimeUnit.MICROSECONDS)//每200ms
+                .subscribe(new Action1<Integer>()
+                {
+                    @Override
+                    public void call(Integer integer)
+                    {
+                        Log.e(TAG, "throttleFirst" + integer);
+                    }
+                });
+    }
+
+    private void throttleWithTimeOut()
+    {
+        Observable.create(new Observable.OnSubscribe<Integer>()
+        {
+            @Override
+            public void call(Subscriber<? super Integer> subscriber)
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    subscriber.onNext(i);
+                    int sleep = 100;
+                    if (i % 3 == 0)
+                    {
+                        sleep = 300;
+                    }
+                    try
+                    {
+                        Thread.sleep(sleep);
+                    } catch (InterruptedException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).throttleWithTimeout(200, TimeUnit.MILLISECONDS)
+                .subscribe(new Action1<Integer>()
+                {
+                    @Override
+                    public void call(Integer integer)
+                    {
+                        Log.e(TAG, "throttleWithTimeOut" + integer);
+                    }
+                });
+    }
+
 }
