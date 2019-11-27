@@ -7,7 +7,9 @@ import rx.Observer;
 import rx.Subscriber;
 import rx.functions.Action1;
 import rx.functions.Func1;
+import rx.functions.Func2;
 import rx.observables.GroupedObservable;
+import rx.schedulers.Schedulers;
 
 import android.nfc.Tag;
 import android.os.Build;
@@ -32,7 +34,7 @@ public class Main3Activity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main3);
         Log.e(TAG, "start:");
-        throttleWithTimeOut();
+        combineLastest();
     }
 
     private void intervalOb()
@@ -406,4 +408,91 @@ public class Main3Activity extends AppCompatActivity
                 });
     }
 
+    //-------------------------------------------------------组合操作符-------------------------------//3
+    private void startWith()
+    {
+        Observable.just(3, 4, 5)
+                .startWith(1, 2)//在最前面插入1 2
+                .subscribe(new Action1<Integer>()
+                {
+                    @Override
+                    public void call(Integer integer)
+                    {
+                        Log.e(TAG, "startWith" + integer);
+                    }
+                });
+    }
+
+    private void merge()
+    {
+        Observable<Integer> observable = Observable.just(1, 2, 3).subscribeOn(Schedulers.io());
+        Observable<Integer> observable1 = Observable.just(3, 4);
+        Observable.merge(observable, observable1)//无序合并
+                .subscribe(new Action1<Integer>()
+                {
+                    @Override
+                    public void call(Integer integer)
+                    {
+                        Log.e(TAG, "merge" + integer);
+                    }
+                });
+    }
+
+    private void concat()
+    {
+        Observable<Integer> observable = Observable.just(1, 2, 3).subscribeOn(Schedulers.io());
+        Observable<Integer> observable1 = Observable.just(3, 4);
+        Observable.concat(observable, observable1)//有序合并
+                .subscribe(new Action1<Integer>()
+                {
+                    @Override
+                    public void call(Integer integer)
+                    {
+                        Log.e(TAG, "concat" + integer);
+                    }
+                });
+    }
+
+    private void zipOb()
+    {
+        Observable<Integer> observable = Observable.just(1, 2, 3);
+        Observable<String> observable1 = Observable.just("a", "b", "c");
+        Observable.zip(observable, observable1, new Func2<Integer, String, String>()
+        {
+            @Override
+            public String call(Integer integer, String s)
+            {
+                return integer + s;
+            }
+        }).subscribe(new Action1<String>()
+        {
+            @Override
+            public void call(String s)
+            {
+                Log.e(TAG, "zipOb::" + s);
+
+            }
+        });
+
+    }
+    private void combineLastest(){
+        Observable<Integer> observable=Observable.just(1,2,3,5,6,7);
+        Observable<String> observable1=Observable.just("a","b","c");
+        Observable.combineLatest(observable, observable1, new Func2<Integer, String, String >()
+        {//该方法将第一个Ob发射的最后一个数据与第二个Ob发射的每个数据相结合
+            @Override
+            public String call(Integer integer, String s)
+            {
+                return integer+s;
+            }
+        }).subscribe(new Action1<String>()
+        {
+            @Override
+            public void call(String s)
+            {
+                Log.e(TAG, "combineLastest:" + s);
+            }
+        });
+
+    }
 }
