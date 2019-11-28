@@ -5,6 +5,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import rx.Observable;
 import rx.Observer;
 import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action0;
 import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.functions.Func2;
@@ -34,8 +36,9 @@ public class Main3Activity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main3);
         Log.e(TAG, "start:");
-        combineLastest();
+        timeoutOb();
     }
+
 
     private void intervalOb()
     {
@@ -475,15 +478,17 @@ public class Main3Activity extends AppCompatActivity
         });
 
     }
-    private void combineLastest(){
-        Observable<Integer> observable=Observable.just(1,2,3,5,6,7);
-        Observable<String> observable1=Observable.just("a","b","c");
-        Observable.combineLatest(observable, observable1, new Func2<Integer, String, String >()
+
+    private void combineLastest()
+    {
+        Observable<Integer> observable = Observable.just(1, 2, 3, 5, 6, 7);
+        Observable<String> observable1 = Observable.just("a", "b", "c");
+        Observable.combineLatest(observable, observable1, new Func2<Integer, String, String>()
         {//该方法将第一个Ob发射的最后一个数据与第二个Ob发射的每个数据相结合
             @Override
             public String call(Integer integer, String s)
             {
-                return integer+s;
+                return integer + s;
             }
         }).subscribe(new Action1<String>()
         {
@@ -493,6 +498,125 @@ public class Main3Activity extends AppCompatActivity
                 Log.e(TAG, "combineLastest:" + s);
             }
         });
+    }
 
+    //-------------------------------------------------------辅助操作符-----------------------------------------//
+    private void delayOb()
+    {
+        Observable.create(new Observable.OnSubscribe<Long>()
+        {
+            @Override
+            public void call(Subscriber<? super Long> subscriber)
+            {
+                Long currentTime = System.currentTimeMillis() / 1000;
+                subscriber.onNext(currentTime);
+            }
+        }).delay(3, TimeUnit.SECONDS)//几秒后发送
+                .subscribe(new Action1<Long>()
+                {
+                    @Override
+                    public void call(Long aLong)
+                    {
+                        Log.e(TAG, "delayOb:" + (System.currentTimeMillis() / 1000 - aLong));//当前时间减去发送时间
+                    }
+                });
+    }
+
+    /**
+     * doOnEach          为Observable注册一个回调，当Observable每发射一项数据时就会调用它一次，包括onNext onError，onComplete
+     * doOnNext          只有执行onNext时才被调用
+     * doOnSubscriber    当观察者订阅Observable时被调用
+     * doUnOnSubscriber  取消订阅Observable时会被调用，Observable通过OnError或者onCompleted结束时，会取消订阅虽有的Subscriber。
+     * doOnCompleted     当Observable正常终止调用OnComplete时会调用
+     * doOnError         当Observable异常终止调用onError时会被调用
+     * doOnTerminate     当Observable终止 前 就会调用
+     * finally           当终止 后 就会被调用
+     */
+    private void doOb()
+    {
+        Observable.just(1, 2)
+                .doOnNext(new Action1<Integer>()
+                {
+                    @Override
+                    public void call(Integer integer)
+                    {
+                        Log.e(TAG, "integer:" + integer);
+                    }
+                }).subscribe(new Subscriber<Integer>()
+        {
+            @Override
+            public void onCompleted()
+            {
+                Log.e(TAG, "onCompleted:");
+            }
+
+            @Override
+            public void onError(Throwable e)
+            {
+                Log.e(TAG, "Throwable:");
+            }
+
+            @Override
+            public void onNext(Integer integer)
+            {
+                Log.e(TAG, "onNext:" + integer);
+            }
+        });
+
+    }
+
+    private void subscribeOn()
+    {
+        Observable<Integer> observable = Observable.create(new Observable.OnSubscribe<Integer>()//创建一个被观察者
+        {
+            @Override
+            public void call(Subscriber<? super Integer> subscriber)
+            {
+                Log.e(TAG, "Observable：" + Thread.currentThread().getName());//获取当前线程的名字
+                subscriber.onNext(1);
+                subscriber.onCompleted();
+            }
+        });
+        observable.subscribeOn(Schedulers.newThread())//表示运行在新开的线程
+                .observeOn(AndroidSchedulers.mainThread())//表示运行在主线程
+                .subscribe(new Action1<Integer>()
+                {
+                    @Override
+                    public void call(Integer integer)
+                    {
+                        Log.e(TAG, "Observ：" + Thread.currentThread().getName());//获取当前线程的名字
+                    }
+                });
+    }
+
+    private void timeoutOb()
+    {
+        Observable<Integer> observable = Observable.create(new Observable.OnSubscribe<Integer>()
+        {
+            @Override
+            public void call(Subscriber<? super Integer> subscriber)
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    try
+                    {
+                        Thread.sleep(i * 100);
+                    } catch (InterruptedException e)
+                    {
+                        e.printStackTrace();
+                    }
+                    subscriber.onNext(i);
+                }
+                subscriber.onCompleted();
+            }
+        }).timeout(200, TimeUnit.MILLISECONDS, Observable.just(10, 11));//执行新一个Observable
+        observable.subscribe(new Action1<Integer>()
+        {
+            @Override
+            public void call(Integer integer)
+            {
+                Log.e(TAG, "timeoutOb:" + integer);
+            }
+        });
     }
 }
