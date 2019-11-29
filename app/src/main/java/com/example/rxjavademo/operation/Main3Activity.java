@@ -36,7 +36,7 @@ public class Main3Activity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main3);
         Log.e(TAG, "start:");
-        timeoutOb();
+        retryOb();
     }
 
 
@@ -618,5 +618,109 @@ public class Main3Activity extends AppCompatActivity
                 Log.e(TAG, "timeoutOb:" + integer);
             }
         });
+    }
+
+    //------------------------------------------错误处理操作符--------------------------------------//
+
+    /**
+     * onErrorReturn：Observable遇到错误时返回原来的Observable行为的备用Observable，
+     * 备用Observable会忽略原有Observable的onError调用，不会将错误传递给观察者。
+     * 作为替代，它会发射一个特殊的项并调用观察者的onCompleted。
+     * onErrorRsumeNext：Observable遇到错误时返回原有Observable行为的备用Observable
+     * 它会发射一个特殊的项并调用观察者的Observable的数据。
+     * onExceptionResumeNext：如果收到的Throwable不是一个Exception，它会将错误传递给观察者的onError方法
+     */
+    private void catchOb()
+    {
+        Observable.create(new Observable.OnSubscribe<Integer>()
+        {
+            @Override
+            public void call(Subscriber<? super Integer> subscriber)
+            {
+                for (int i = 0; i < 5; i++)
+                {
+                    if (i > 2)
+                    {//当i大于2的时候发送错误
+                        subscriber.onError(new Throwable("Throwable"));
+                    }
+                    subscriber.onNext(i);
+                }
+                subscriber.onCompleted();
+            }
+        }).onErrorReturn(new Func1<Throwable, Integer>()
+        {
+            @Override
+            public Integer call(Throwable throwable)
+            {
+                return 6;//接收到onError的时候发送一个备用信息给Observable
+            }
+        }).subscribe(new Observer<Integer>()
+        {
+            @Override
+            public void onCompleted()
+            {
+                Log.e(TAG, "onCompleted:");
+            }
+
+            @Override
+            public void onError(Throwable e)
+            {
+                Log.e(TAG, "onError:" + e.getMessage());//得到报错信息
+            }
+
+            @Override
+            public void onNext(Integer integer)
+            {
+                Log.e(TAG, "onNext:" + integer);
+            }
+        });
+
+    }
+
+    /**
+     * retry
+     * retryWhen
+     */
+    private void retryOb()
+    {
+        Observable.create(new Observable.OnSubscribe<Integer>()
+        {
+            @Override
+            public void call(Subscriber<? super Integer> subscriber)
+            {
+                for (int i = 0; i < 5; i++)
+                {
+                    if (i == 1)
+                    {
+                        subscriber.onError(new Throwable("Throwable"));
+                    } else
+                    {
+                        subscriber.onNext(i);
+                    }
+                }
+                subscriber.onCompleted();
+            }
+        }).retry(2)//设置重新订阅的次数，实际订阅次数为该次数+1，因为最开始就订阅了一次
+                .subscribe(new Observer<Integer>()
+                {
+
+                    @Override
+                    public void onCompleted()
+                    {
+                        Log.e(TAG, "onCompleted:");
+                    }
+
+                    @Override
+                    public void onError(Throwable e)
+                    {
+                        Log.e(TAG, "onError:" + e.getMessage());//得到报错信息
+                    }
+
+                    @Override
+                    public void onNext(Integer integer)
+                    {
+                        Log.e(TAG, "onNext:" + integer);
+                    }
+                });
     }
 }
