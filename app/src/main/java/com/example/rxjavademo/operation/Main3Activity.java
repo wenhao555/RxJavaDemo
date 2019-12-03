@@ -23,21 +23,13 @@ import com.example.rxjavademo.model.Swordsman;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class Main3Activity extends AppCompatActivity
 {
     private final String TAG = getClass().getName();
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState)
-    {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main3);
-        Log.e(TAG, "start:");
-        retryOb();
-    }
 
 
     private void intervalOb()
@@ -722,5 +714,161 @@ public class Main3Activity extends AppCompatActivity
                         Log.e(TAG, "onNext:" + integer);
                     }
                 });
+    }
+
+    //--------------------------------------条件操作符和布尔操作符-----------------------------------------//
+    private void allOb()
+    {
+        Observable.just(1, 2, 3, 4)
+                .all(new Func1<Integer, Boolean>()
+                {
+                    @Override
+                    public Boolean call(Integer integer)
+                    {
+                        Log.e(TAG, "call:" + integer);//输出所有小于3的数
+                        return integer < 3;//小于3的数
+                    }
+                }).subscribe(new Subscriber<Boolean>()
+        {
+            @Override
+            public void onCompleted()
+            {
+                Log.e(TAG, "onCompleted:");
+            }
+
+            @Override
+            public void onError(Throwable e)
+            {
+                Log.e(TAG, "onError:" + e.getMessage());//得到报错信息
+            }
+
+            @Override
+            public void onNext(Boolean aBoolean)
+            {
+                Log.e(TAG, "onNext:" + aBoolean);
+            }
+        });
+    }
+
+    private void contains_isEmptyOb()
+    {
+        Observable.just(1, 2, 3, 4, 5)
+                .contains(1)//查看是否包含某一个数据 现在是查看是否包含1
+                .subscribe(new Action1<Boolean>()
+                {
+                    @Override
+                    public void call(Boolean aBoolean)
+                    {
+                        Log.e(TAG, "callContains:" + aBoolean);//包含则返回true 不包含则返回false
+                    }
+                });
+        Observable.just(1, 2, 3, 4)
+                .isEmpty()//用来判断是否发射过数据
+                .subscribe(new Action1<Boolean>()
+                {
+                    @Override
+                    public void call(Boolean aBoolean)
+                    {
+                        Log.e(TAG, "callisEmpty:" + aBoolean);//包含则返回true 不包含则返回false
+                    }
+                });
+    }
+
+    //----------------------------------条件操作符--------------------------------//
+    private void amb()
+    {
+        Observable.amb(//只会发射首先发射出来的数据，由于第一个Observable延迟两秒发射，所以不会发射
+                Observable
+                        .just(1, 2)//第一个被观察者发射数据
+                        .delay(2, TimeUnit.SECONDS), Observable.just(3, 4, 5))
+                .subscribe(new Action1<Integer>()
+                {
+                    @Override
+                    public void call(Integer integer)
+                    {
+                        Log.e(TAG, "amb:" + integer);
+                    }
+                });
+    }
+
+    private void defaultEmptyOb()
+    {
+        Observable.create(new Observable.OnSubscribe<Integer>()
+        {
+            @Override
+            public void call(Subscriber<? super Integer> subscriber)
+            {
+                subscriber.onCompleted();
+            }
+        }).defaultIfEmpty(3)//由于原始Observable没有发射数据则会发射一个指定数据3
+                .subscribe(new Action1<Integer>()
+                {
+                    @Override
+                    public void call(Integer integer)
+                    {
+                        Log.e(TAG, "defaultIfEmpty:" + integer);
+                    }
+                });
+    }
+
+    //----------------------------------------------------转换操作符-----------------------------------------//
+    private void toList()
+    {
+        Observable.just(1, 2, 3, 4)
+                .toList()//将所有数据转换成List集合
+                .subscribe(new Action1<List<Integer>>()
+                {
+                    @Override
+                    public void call(List<Integer> integers)
+                    {
+                        Log.e(TAG, "toList:" + integers);
+                    }
+                });
+    }
+
+    private void toSortedList()
+    {
+        Observable.just(3, 7, 6, 1)
+                .toSortedList()
+                .subscribe(new Action1<List<Integer>>()
+                {
+                    @Override
+                    public void call(List<Integer> integers)
+                    {
+                        Log.e(TAG, "toList:" + integers);
+                    }
+                });
+    }
+
+    private void toMapOb()
+    {
+        Swordsman swordsman1 = new Swordsman("1111", "aaa");
+        Swordsman swordsman2 = new Swordsman("2222", "SS");
+        Swordsman swordsman3 = new Swordsman("3333", "X");
+        Observable.just(swordsman1, swordsman2, swordsman3)
+                .toMap(new Func1<Swordsman, String>()
+                {
+                    @Override
+                    public String call(Swordsman swordsman)
+                    {
+                        return swordsman.getLevel();
+                    }
+                }).subscribe(new Action1<Map<String, Swordsman>>()
+        {
+            @Override
+            public void call(Map<String, Swordsman> stringSwordsmanMap)
+            {
+                Log.e(TAG, "toMapOb:" + stringSwordsmanMap.get("SS").getName());
+            }
+        });
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState)
+    {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main3);
+        Log.e(TAG, "start:");
+        toMapOb();
     }
 }
