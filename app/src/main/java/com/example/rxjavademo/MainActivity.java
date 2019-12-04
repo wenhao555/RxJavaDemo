@@ -34,8 +34,7 @@ public class MainActivity extends AppCompatActivity
     Action1<String> onNextAction = new Action1<String>()
     {
         @Override
-        public void call(String s)
-        {
+        public void call(String s)        {
             Log.e("Rxjava", "call" + s);
         }
     };

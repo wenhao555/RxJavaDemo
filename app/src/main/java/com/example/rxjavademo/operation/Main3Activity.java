@@ -92,7 +92,7 @@ public class Main3Activity extends AppCompatActivity
                     @Override
                     public void onNext(Long aLong)
                     {
-                        Log.e(TAG, "interval:" + aLong.intValue());
+                        Log.e(TAG, "timerOb:" + aLong.intValue());
                     }
                 });
     }
